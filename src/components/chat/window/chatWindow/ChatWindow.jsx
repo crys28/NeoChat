@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import "./chatWindow.css"
 import EmojiPicker from "emoji-picker-react";
-import { arrayRemove, arrayUnion, doc, documentId, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
-import { db } from "../../../../lib/firebase";
+import { arrayRemove, arrayUnion, doc, documentId, getDoc, onSnapshot, updateDoc, collection, addDoc, setDoc } from "firebase/firestore";
+import { db, firestore } from "../../../../lib/firebase";
 import { useChatStore } from "../../../../lib/chatStore";
 import { useUserStore } from "../../../../lib/userStore";
 import upload from "../../../../lib/upload";
@@ -10,6 +10,11 @@ import { format } from 'timeago.js';
 import { useChatGroupStore } from "../../../../lib/chatGroupStore";
 import axios from 'axios';
 import JsGoogleTranslateFree from "@kreisler/js-google-translate-free";
+
+// import firebase from 'firebase/app';
+// import 'firebase/firestore';
+// const firestore = firebase.firestore();
+
 const ChatWindow = () => {
   const [chat, setChat] = useState();
   const [groupChat, setGroupChat] = useState();
@@ -30,7 +35,153 @@ const ChatWindow = () => {
 
   const {chatId, user, isCurrentUserBlocked, isReceiverBlocked, changeBlock} = useChatStore();
   const {userGroup, chatGroupId} = useChatGroupStore();
-  const {currentUser} = useUserStore();
+  const {currentUser, fetchUserInfo} = useUserStore();
+
+  //VIDEO CHAT RELATED
+  const [callId, setCallId] = useState(null);
+  const [vidChat, setVidChat] = useState(false);
+  const [userCall, setUserCall] = useState("");
+  const [chatInput, setChatInput] = useState("Input id here...");
+  // const servers = {
+  //   iceServers: [
+  //     {
+  //       urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'],
+  //     },
+  //   ],
+  //   iceCandidatePoolSize: 10,
+  // };
+
+  const pc = useRef(new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+  }));
+  // let localStream = null;
+  // let remoteStream = null;
+  const localStream = useRef(null);
+  const remoteStream = useRef(new MediaStream());
+  useEffect(() => {
+    pc.current.ontrack = (event) => {
+      remoteStream.current.addTrack(event.track);
+      document.getElementById('remoteVideo').srcObject = remoteStream.current;
+    };
+
+    // pc.current.onicecandidate = (event) => {
+    //   if (event.candidate && callId) {
+    //     const candidatesCollectionRef = collection(
+    //       firestore,
+    //       'calls',
+    //       callId,
+    //       'candidates'
+    //     );
+    //     addDoc(candidatesCollectionRef, event.candidate.toJSON());
+    //   }
+    // };
+  }, []);
+
+  
+  // const webcamButton = document.getElementById('webcamButton');
+ 
+  // const callInput = document.getElementById('callInput');
+  // const answerButton = document.getElementById('answerButton');
+  
+  // const hangupButton = document.getElementById('hangupButton');
+
+  const createCall = async () => {
+      const callInput = document.getElementById('callInput');
+    
+      const userDocRef = doc(db, "users", user?.id)
+      const callDocRef = doc(collection(firestore, 'calls'));
+      // callInput.value = "Hello"
+      setCallId(callDocRef.id);
+        
+        // callInput.innerText = callDocRef.id;
+        const offerCandidatesCollectionRef = collection(callDocRef, 'offerCandidates');
+        const answerCandidatesCollectionRef = collection(callDocRef, 'answerCandidates');
+        
+       
+        // setChatInput(callDocRef.id)
+        callInput.value = callDocRef.id
+        // Get candidates for caller, save to db
+        pc.current.onicecandidate = (event) => {
+          event.candidate && addDoc(offerCandidatesCollectionRef, event.candidate.toJSON());
+        };
+    
+        const offerDescription = await pc.current.createOffer();
+        await pc.current.setLocalDescription(offerDescription);
+    
+        const offer = {
+          sdp: offerDescription.sdp,
+          type: offerDescription.type,
+        };
+    
+        await setDoc(callDocRef, { offer });
+    
+        onSnapshot(callDocRef, (snapshot) => {
+          const data = snapshot.data();
+          if (!pc.currentRemoteDescription && data?.answer) {
+            const answerDescription = new RTCSessionDescription(data.answer);
+            pc.current.setRemoteDescription(answerDescription);
+          }
+        });
+    
+        onSnapshot(answerCandidatesCollectionRef, (snapshot) => {
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === 'added') {
+              const candidate = new RTCIceCandidate(change.doc.data());
+              pc.current.addIceCandidate(candidate);
+            }
+    
+      // setCallId(callDocRef.id);
+        });
+      });
+
+      await updateDoc(userDocRef, {
+        callNow: true,
+        callId: callDocRef.id,
+        caller: currentUser.username
+      })
+
+      alert("Send this id to your friend: " + callDocRef.id)
+    
+  }
+
+  const answerCall = async () => {
+    const callId = document.getElementById('callInput').value;
+    const callDocRef = doc(firestore, 'calls', callId);
+    // setCallId(callId);
+    setCallId(callId);
+    const offerCandidatesCollectionRef = collection(callDocRef, 'offerCandidates');
+    const answerCandidatesCollectionRef = collection(callDocRef, 'answerCandidates');
+
+    pc.current.onicecandidate = (event) => {
+      event.candidate && addDoc(answerCandidatesCollectionRef, event.candidate.toJSON());
+    };
+
+    const callData = (await getDoc(callDocRef)).data();
+
+    const offerDescription = callData.offer;
+    await pc.current.setRemoteDescription(new RTCSessionDescription(offerDescription));
+
+    const answerDescription = await pc.current.createAnswer();
+    await pc.current.setLocalDescription(answerDescription);
+
+    const answer = {
+      type: answerDescription.type,
+      sdp: answerDescription.sdp,
+    };
+
+    await updateDoc(callDocRef, { answer });
+
+    onSnapshot(offerCandidatesCollectionRef, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const candidate = new RTCIceCandidate(change.doc.data());
+          pc.current.addIceCandidate(candidate);
+        }
+      });
+    });
+
+  }
+//****************************************************
 
   const userChat = getDoc(doc(db, "userChats", currentUser.id))
      const endRef = useRef(null);
@@ -254,8 +405,47 @@ const ChatWindow = () => {
              </div> 
           </div>
         <div className="icons">
-          <img src="./phone.png" alt="" />
-          <img src="./video.png" alt="" />
+          <img src="./phone.png" alt=""/>
+          <img src="./video.png" alt="" id="webcamButton" onClick={ async ()=>{
+
+            setUserCall(user?.username)
+            setVidChat(prev=>!prev)
+            const userDocRef = doc(db, "users", user?.id)
+            setTimeout(async() => {
+              // const webcamVideo = document.getElementById('webcamVideo');
+              // const remoteVideo = document.getElementById('remoteVideo');
+              localStream.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+              // remoteStream = new MediaStream();
+              // Push tracks from local stream to peer connection
+              document.getElementById('webcamVideo').srcObject = localStream.current;
+              localStream.current.getTracks().forEach((track) => {
+                pc.current.addTrack(track, localStream.current);
+              });
+              
+              // Pull tracks from remote stream, add to video stream
+              // pc.ontrack = (event) => {
+              //   event.streams[0].getTracks().forEach((track) => {
+              //     remoteStream.addTrack(track);
+              //   });
+              // };
+            
+             
+              // remoteVideo.srcObject = remoteStream;
+
+             
+             
+              //Creating offer
+
+              // callButton.disabled = false;
+              // answerButton.disabled = false;
+
+            }, 1000);
+
+          
+            // callButton.disabled = false;
+            // answerButton.disabled = false;
+            // webcamButton.disabled = true;
+          }}/>
           <img src={detailsOn ? "./x.png" : "./info.png"} alt="" onClick={() => {
                   setDetailsOn(prev=>!prev)
                   const detailSection = document.getElementById("detailSection");
@@ -324,10 +514,28 @@ const ChatWindow = () => {
       </div>
 
       <div className="center" id="centerChat">
-
-        <div className="videoChat">
-          <video src=""></video>
-        </div>
+        {vidChat && userCall == user?.username && <div className="videoChat">
+          {/* <video controls>
+            <source src="./wot.mp4" type="video/mp4" />
+          </video> */}
+          <span>
+            <h3>Local Video</h3>
+            <video id="webcamVideo" autoPlay playsInline></video>
+            <div className="chatInput">
+            <button id="callButton" onClick={createCall}>Create Call</button>
+            </div>
+            {/* <input id="callInput" type="text" /> */}
+          </span>
+          <span>
+          <h3>Remote Video</h3>
+            <video id="remoteVideo" autoPlay playsInline></video>
+            <div className="chatInput" >
+              <input id="callInput" type="text" defaultValue={chatInput}/>
+              <button id="answerButton" onClick={answerCall}>Answer</button>
+            </div>
+          </span>
+        </div>}          
+        
            
             { chat?.messages?.map((message) =>(
 

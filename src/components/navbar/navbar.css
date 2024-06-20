@@ -1,0 +1,38 @@
+.navbar{
+    /* background-color: #434e51; */
+     background-color: rgba(17, 25, 25, 0.75);
+    backdrop-filter: blur(19px) saturate(180%);
+    flex: 1;
+    border-bottom: 1px solid #dddddd35;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    /* justify-content: space-between; */
+
+    .navBtns{
+        flex: 4;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 15px;
+        margin-right: 10px;
+        
+        img{
+            cursor: pointer;
+            border-radius: 50%;
+            &:hover{
+               filter: brightness(60%);
+            }
+        }
+    }
+}
+
+
+.logo{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    /* border-right: 1px solid white; */
+}
+

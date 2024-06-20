@@ -1,0 +1,300 @@
+
+.groups{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 0;
+
+    .groupsSection{
+        width: 50%;
+        height: 80vh;
+        border-radius: 15px;
+        box-shadow: 0px 2px 20px #888;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: rgba(17, 25, 35, 0.90);
+        filter: blur(0);
+        padding: 20px;
+        position: relative;
+
+
+        .title{
+            display: flex;
+            width: 100%;
+            flex-direction: row;
+            padding: 10px;
+            border-bottom: 2px solid white;
+            justify-content: space-between;
+            align-items: center;
+         
+           
+            button{
+                font-size: 14px;
+                border-radius: 20px;
+                padding: 5px 15px 5px 15px;
+                background-color: rgba(50, 50, 50, 0.75);
+                border: 0;
+                color: white;
+                cursor: pointer;
+
+                &:hover{
+                    background-color: white;
+                    color: #222;
+                }
+            }
+        }
+
+        .groupSection{
+            display: flex;
+            width: 100%;
+            height: auto;
+            padding: 20px;
+            flex-direction: column;
+            .item{
+                display: flex;
+                flex-direction: row;
+                gap: 20px;
+                padding: 10px;
+                width: 100%;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #888;
+                cursor: pointer;
+                border: 1px solid transparent;
+
+                &:hover{
+                    /* filter: brightness(65%); */
+                    border: 1px solid #888;
+                }
+
+                .info{
+                    display: flex;
+                    gap: 20px;
+                    align-items: center;
+                    
+                    img{
+                        border-radius: 50px;
+                        object-fit: cover;
+                    }
+                    .texts{
+
+                        span{
+                            font-size: 12px;
+                            color: #888;
+                        }
+                    }
+                }
+
+                .btns{
+                    display: flex;
+                    gap: 20px;
+
+                    button{
+                        padding: 10px;
+                    }
+                }
+
+                .editForm{
+                    position: absolute;
+                    margin: auto;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    height: 90%;
+                    width: 100%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    flex-direction: column;
+                    gap: 30px;
+                    background-color: #222;
+                    border-radius: 50px;
+                    label{
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: space-around;
+                        flex: 5;
+                        gap: 15px;
+                        cursor: pointer;
+                        width: 100%;
+                        border-bottom: 2px solid #888;
+                        padding-bottom: 20px;
+                        span{
+                            font-size: 18px;
+                        }
+                        img{
+                            object-fit: cover;
+                            border-radius: 50%;
+                        }
+                    }
+
+                    .titleGroup{
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: space-around;
+                        gap: 15px;
+                        flex: 3;
+                        span{
+                            font-size: 18px;
+                        }
+                        input{
+                            background-color: rgba(50, 50, 50, 1);
+                            padding: 5px;
+                            border: 0;
+                            color: white;
+                            font-size: 20px;
+                        }
+                    }
+
+                    .btns{
+                        flex: 1;
+                        display: flex;
+                        padding: 20px;
+                    }
+                }
+
+                .hidden{
+                    display: none;
+                }
+            }
+        }
+    }
+
+    .createGroup{
+        position: absolute;
+        width: 70%;
+        height: 70%;
+        background-color: rgba(17, 25, 40, 1);
+        border: 3px solid #dddddd2d;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        margin: auto;
+        display: flex;
+        flex-direction: column;
+        border-radius: 10px;
+
+        .modalTitle{
+            padding: 5px;
+            display: flex;
+            flex: 1;
+            flex-direction: row;
+            border-bottom: 1px solid #dddddd2d;
+            justify-content: space-between;
+            align-items: center;
+
+            span{
+                font-size: 14px;
+                color: #dddddd6a;
+                font-weight: bold;
+            }
+
+            img{
+                cursor: pointer;
+                &:hover{
+                    filter: brightness(60%);
+                }
+            }
+        }
+
+        .settingGroup{
+            display: flex;
+            flex-direction: row;
+            flex: 6;
+            justify-content: space-between;
+            .friendSection{
+                flex: 1;
+                display: flex;
+                padding: 15px;
+                align-items: flex-start;
+                flex-direction: column;
+                overflow-y: scroll;
+                .item{
+                    display: flex;
+                    width: 100%;
+                    align-items: center;
+                    gap: 20px;
+                    padding: 15px;
+    
+                    &:has(input[type="checkbox"]:checked) {
+                        background-color: rgba(17, 25, 90, 1);
+                    }
+                    &:hover{
+                        filter: brightness(60%);
+                    }
+    
+                    img{
+                        border-radius: 50px;
+                        object-fit: cover;
+                    }
+                
+                    
+                }
+              
+            }
+
+            .rightSideGroupSetting{
+                padding: 15px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-around;
+                flex: 1;
+                .groupImg{
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 20px;
+                    padding-bottom: 15px;
+                    border-bottom: 1px solid #888;
+
+                    label{
+                       
+                        img{
+                            object-fit: cover;
+                            border-radius: 50%;
+                        }
+                    }
+                }
+
+                .groupTitle{
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 20px;
+                }
+            }
+        }
+
+        .btns{
+            flex: 1;
+            border-top: 1px solid #dddddd2d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            button{
+                font-size: 14px;
+                border-radius: 20px;
+                padding: 5px 15px 5px 15px;
+                background-color: rgba(37, 37, 170, 0.75);
+                border: 0;
+                color: white;
+                cursor: pointer;
+
+                &:hover{
+                    background-color: white;
+                    color: #222;
+                }
+            }
+        }
+
+        
+    }
+}
+

@@ -1,0 +1,115 @@
+.addUser{
+   z-index: -1;
+   width: 100vw;
+   /* height: 100vh; */
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+   top: 0;
+   bottom: 0;
+   right: 0;
+   left: 0;
+   margin: auto;
+    
+
+    .addUserModal{
+        display: flex;
+        flex-direction: column;
+        background-color: rgba(17, 25, 40, 1);
+        border-radius: 10px;
+        width: 20%;
+        height: auto;
+        z-index: 4;
+        border: 3px solid #dddddd2d;
+        
+        .titleBar{
+            width: 100%;
+            height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            /* margin: 5px; */
+            padding: 5px;
+      
+            border-bottom: 1px solid #dddddd2d;
+            span{
+                font-size: 14px;
+                color: #dddddd6a;
+                font-weight: bold;
+            }
+
+            img{
+                cursor: pointer;
+                &:hover{
+                    filter: brightness(60%);
+                }
+            }
+         
+        }
+    
+        
+    
+        form{
+            display: flex;
+            gap: 20px;
+            padding: 30px 30px 0 30px;
+            margin-bottom: 20px;
+            input{
+                width: 100%;
+                padding: 20px;
+                border-radius: 10px;
+                border: none;
+                outline: none;
+            }
+    
+            button{
+                padding: 20px;
+                border-radius: 10px;
+                background-color: #1a73e8;
+                color: white;
+                border: none;
+                cursor: pointer;
+
+                &:hover{
+                    background-color: #1a73e871;
+                }
+            }
+        }
+    
+        .user{
+            padding: 0 30px 30px 30px;
+            margin-top: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+    
+            .detail{
+                display: flex;
+                gap: 20px;
+                align-items: center;
+    
+                img{
+                    width: 50px;
+                    height: 50px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                }
+            }
+    
+            button{
+                padding: 10px;
+                border-radius: 10px;
+                background-color: #1a73e8;
+                color: white;
+                border: none;
+                cursor: pointer;
+            }
+        }
+
+    }
+
+    /* z-index: 1000; */
+
+   
+}

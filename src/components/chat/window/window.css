@@ -1,0 +1,29 @@
+.window{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* background-image: url('public/bg.png'); */
+    /* filter: blur(19px); */
+    /* background-color: rgba(17, 25, 40, 0.75); */
+    /* backdrop-filter: blur(19px) saturate(180%); */
+    /* background-color: #2B193D; */
+    /* width: 90vw;
+    height: 90vh; */
+    width: 100%;
+    flex: 4;
+    /* position: relative; */
+    /* z-index: -1; */
+
+    .hidden{
+        display: none;
+    }
+
+    .arrowImg{
+        transition: ease-in-out 0.3s;
+        &:hover{
+            transform: translateX(-5px);
+        }
+    }
+}
+
+

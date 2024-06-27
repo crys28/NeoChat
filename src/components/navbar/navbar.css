@@ -33,6 +33,10 @@
     justify-content: center;
     align-items: center;
     flex: 1;
+    img{
+        object-fit: contain;
+        margin-right: 10%;
+    }
     /* border-right: 1px solid white; */
 }
 

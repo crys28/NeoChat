@@ -19,6 +19,7 @@ const ChatWindow = () => {
   const [chat, setChat] = useState();
   const [groupChat, setGroupChat] = useState();
   const [slider, setSlider] = useState(false);
+  const [arrowUp, setArrowUp] = useState(false);
   const [language, setLanguage] = useState("en")
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
@@ -40,6 +41,7 @@ const ChatWindow = () => {
   //VIDEO CHAT RELATED
   const [callId, setCallId] = useState(null);
   const [vidChat, setVidChat] = useState(false);
+  const [answerOn, setAnswerOn] = useState(false);
   const [userCall, setUserCall] = useState("");
   const [chatInput, setChatInput] = useState("Input id here...");
   // const servers = {
@@ -86,6 +88,7 @@ const ChatWindow = () => {
   // const hangupButton = document.getElementById('hangupButton');
 
   const createCall = async () => {
+    setAnswerOn(true)
       const callInput = document.getElementById('callInput');
     
       const userDocRef = doc(db, "users", user?.id)
@@ -145,6 +148,7 @@ const ChatWindow = () => {
   }
 
   const answerCall = async () => {
+    setAnswerOn(true)
     const callId = document.getElementById('callInput').value;
     const callDocRef = doc(firestore, 'calls', callId);
     // setCallId(callId);
@@ -406,8 +410,8 @@ const ChatWindow = () => {
           </div>
         <div className="icons">
           <img src="./phone.png" alt=""/>
-          <img src="./video.png" alt="" id="webcamButton" onClick={ async ()=>{
-
+          <img src={vidChat ? "./videoOn.png" : "./video.png"} alt=""  id="webcamButton" onClick={ async ()=>{
+            setAnswerOn(false)
             setUserCall(user?.username)
             setVidChat(prev=>!prev)
             const userDocRef = doc(db, "users", user?.id)
@@ -468,17 +472,11 @@ const ChatWindow = () => {
                 </div>
                 <div className="option">
                   <div className="title">
-                    <span>Privacy & Help</span>
-                    <img src="./arrowUp.png" alt="" />
-                  </div>
-                </div>
-                <div className="option">
-                  <div className="title">
                     <span>Shared Photos</span>
-                    <img src="./arrowDown.png" alt="" />
+                    <img src={arrowUp ? "./arrowDown.png" :  "./arrowUp.png"} alt="" onClick={()=>{setArrowUp(prev=>!prev)}}/>
                   </div>
                    
-                  <div className="photos">
+                  {arrowUp ? <div className="photos">
                     {chat?.messages.map((message) =>( 
                 
                       <div className="photoItem" style={!message.img ? {display: "none"} : {}} key={message?.createdAt}>
@@ -494,19 +492,14 @@ const ChatWindow = () => {
                     </div> 
                     
                     )) }        
-                  </div>
+                  </div> : ""}
                 </div>
-                <div className="option">
-                  <div className="title">
-                    <span>Shared Files</span>
-                    <img src="./arrowUp.png" alt="" />
-                  </div>
-                </div>
-                <div className="blockBtn">
+                {!chat?.group ? <div className="blockBtn">
+                  <button >Unfriend</button>
                   <button onClick={handleBlock}>{
                     isCurrentUserBlocked ? "You are blocked!" : isReceiverBlocked ? "User blocked" : "Block User"
                   }</button>
-                </div>
+                </div> : ""}
               </div>
 
           </div>
@@ -519,15 +512,19 @@ const ChatWindow = () => {
             <source src="./wot.mp4" type="video/mp4" />
           </video> */}
           <span>
-            <h3>Local Video</h3>
+            <h3>Your webcam</h3>
             <video id="webcamVideo" autoPlay playsInline></video>
             <div className="chatInput">
             <button id="callButton" onClick={createCall}>Create Call</button>
+            {answerOn ? <button style={{backgroundColor: "red"}} onClick={()=>{setVidChat(prev=>!prev)}}>
+            End Call
+            <img src="./hangUpWhite.png" alt="" width="30" height="30"/>
+            </button> : ""}
             </div>
             {/* <input id="callInput" type="text" /> */}
           </span>
           <span>
-          <h3>Remote Video</h3>
+          <h3>{user?.username + "'s "} webcam</h3>
             <video id="remoteVideo" autoPlay playsInline></video>
             <div className="chatInput" >
               <input id="callInput" type="text" defaultValue={chatInput}/>
@@ -603,8 +600,8 @@ const ChatWindow = () => {
             <img src="./img.png" alt="" />
           </label>
           <input type="file" id="file"  style={{display: "none"}} onChange={handleImg}/>
-          <img src="./camera.png" alt="" />
-          <img src="./mic.png" alt="" />
+          {/* <img src="./camera.png" alt="" /> */}
+          {/* <img src="./mic.png" alt="" /> */}
         </div>
         <input 
           type="text" 

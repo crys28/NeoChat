@@ -4,13 +4,13 @@ import { useUserStore } from "../../lib/userStore"
 import "./navbar.css"
 
 
-const Navbar = () => {
+const Navbar = () => { 
   const {currentUser, changeSettings, displayGroups } = useUserStore()
   const {changeChatId } = useChatStore()
   return (
     <div className="navbar">
       <div className="logo">
-        <img src="/logo.png" alt="" width="254" height="84" onClick={()=>{location.reload()}}/>
+        <img src="/logo_NEOCHAT4.png" alt="" width="254" height="84" onClick={()=>{location.reload()}}/>
       </div>
       <div className="navBtns">
         <img src={currentUser.avatar || "/profile.png"} title="Profile" alt="" width="38" height="38" onClick={() => {

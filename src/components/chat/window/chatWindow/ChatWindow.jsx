@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import "./chatWindow.css"
 import EmojiPicker from "emoji-picker-react";
-import { arrayRemove, arrayUnion, doc, documentId, getDoc, onSnapshot, updateDoc, collection, addDoc, setDoc } from "firebase/firestore";
+import { arrayRemove, arrayUnion, doc, documentId, getDoc, onSnapshot, updateDoc, collection, addDoc, setDoc, getDocs, deleteDoc } from "firebase/firestore";
 import { db, firestore } from "../../../../lib/firebase";
 import { useChatStore } from "../../../../lib/chatStore";
 import { useUserStore } from "../../../../lib/userStore";
 import upload from "../../../../lib/upload";
 import { format } from 'timeago.js';
-import { useChatGroupStore } from "../../../../lib/chatGroupStore";
+// import { useChatGroupStore } from "../../../../lib/chatGroupStore";
 import axios from 'axios';
 import JsGoogleTranslateFree from "@kreisler/js-google-translate-free";
+import { toast } from "react-toastify";
 
 // import firebase from 'firebase/app';
 // import 'firebase/firestore';
@@ -34,8 +35,8 @@ const ChatWindow = () => {
   //   url:""
   // });
 
-  const {chatId, user, isCurrentUserBlocked, isReceiverBlocked, changeBlock} = useChatStore();
-  const {userGroup, chatGroupId} = useChatGroupStore();
+  const {chatId, user, isCurrentUserBlocked, isReceiverBlocked, changeBlock, changeChatId} = useChatStore();
+  // const {userGroup, chatGroupId} = useChatGroupStore();
   const {currentUser, fetchUserInfo} = useUserStore();
 
   //VIDEO CHAT RELATED
@@ -44,20 +45,10 @@ const ChatWindow = () => {
   const [answerOn, setAnswerOn] = useState(false);
   const [userCall, setUserCall] = useState("");
   const [chatInput, setChatInput] = useState("Input id here...");
-  // const servers = {
-  //   iceServers: [
-  //     {
-  //       urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'],
-  //     },
-  //   ],
-  //   iceCandidatePoolSize: 10,
-  // };
 
   const pc = useRef(new RTCPeerConnection({
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
   }));
-  // let localStream = null;
-  // let remoteStream = null;
   const localStream = useRef(null);
   const remoteStream = useRef(new MediaStream());
   useEffect(() => {
@@ -65,7 +56,20 @@ const ChatWindow = () => {
       remoteStream.current.addTrack(event.track);
       document.getElementById('remoteVideo').srcObject = remoteStream.current;
     };
+    pc.current.oniceconnectionstatechange = () => {
+      if (pc.current.iceConnectionState === 'disconnected' || pc.current.iceConnectionState === 'failed' || pc.current.iceConnectionState === 'closed') {
+        hangUp();
+        pc.current = new RTCPeerConnection({
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+        // pc.current.ontrack = (event) => {
+        //   remoteStream.current.addTrack(event.track);
+        //   document.getElementById('remoteVideo').srcObject = remoteStream.current;
+        // };
+        remoteStream.current = new MediaStream();
 
+      }
+    }
     // pc.current.onicecandidate = (event) => {
     //   if (event.candidate && callId) {
     //     const candidatesCollectionRef = collection(
@@ -88,26 +92,32 @@ const ChatWindow = () => {
   // const hangupButton = document.getElementById('hangupButton');
 
   const createCall = async () => {
+    pc.current = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+    localStream.current.getTracks().forEach((track) => {
+      pc.current.addTrack(track, localStream.current);
+    });
+    remoteStream.current = new MediaStream();
+
+    pc.current.ontrack = (event) => {
+      remoteStream.current.addTrack(event.track);
+      document.getElementById('remoteVideo').srcObject = remoteStream.current;
+    };
     setAnswerOn(true)
       const callInput = document.getElementById('callInput');
     
       const userDocRef = doc(db, "users", user?.id)
       const callDocRef = doc(collection(firestore, 'calls'));
-      // callInput.value = "Hello"
       setCallId(callDocRef.id);
-        
-        // callInput.innerText = callDocRef.id;
-        const offerCandidatesCollectionRef = collection(callDocRef, 'offerCandidates');
-        const answerCandidatesCollectionRef = collection(callDocRef, 'answerCandidates');
-        
-       
-        // setChatInput(callDocRef.id)
+      const offerCandidatesCollectionRef = collection(callDocRef, 'offerCandidates');
+      const answerCandidatesCollectionRef = collection(callDocRef, 'answerCandidates');
         callInput.value = callDocRef.id
-        // Get candidates for caller, save to db
+        // Get candidates for caller, save to 
+        
         pc.current.onicecandidate = (event) => {
           event.candidate && addDoc(offerCandidatesCollectionRef, event.candidate.toJSON());
         };
-    
         const offerDescription = await pc.current.createOffer();
         await pc.current.setLocalDescription(offerDescription);
     
@@ -148,6 +158,18 @@ const ChatWindow = () => {
   }
 
   const answerCall = async () => {
+    pc.current = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+    localStream.current.getTracks().forEach((track) => {
+      pc.current.addTrack(track, localStream.current);
+    });
+    remoteStream.current = new MediaStream();
+
+    pc.current.ontrack = (event) => {
+      remoteStream.current.addTrack(event.track);
+      document.getElementById('remoteVideo').srcObject = remoteStream.current;
+    };
     setAnswerOn(true)
     const callId = document.getElementById('callInput').value;
     const callDocRef = doc(firestore, 'calls', callId);
@@ -185,6 +207,28 @@ const ChatWindow = () => {
     });
 
   }
+  const testhangUp = async () => {
+    // let callDoc = doc(collection(firestore, 'calls'));
+    // await deleteDoc(callDoc);
+    const callDocRef = doc(firestore, 'calls', callId);
+    await deleteDoc(callDocRef);
+  }
+  const hangUp = async () => {
+    // Close the RTCPeerConnection
+  if (pc) {
+    pc.current.close();
+    pc.current = null;
+    
+  }
+  // Stop all local media tracks
+  if (localStream) {
+    localStream.current.getTracks().forEach(track => track.stop());
+    localStream.current = null;
+  }
+
+  const callDocRef = doc(firestore, 'calls', callId);
+  await deleteDoc(callDocRef);
+  }
 //****************************************************
 
   const userChat = getDoc(doc(db, "userChats", currentUser.id))
@@ -207,6 +251,7 @@ const ChatWindow = () => {
     const synth = window.speechSynthesis;
     const u = new SpeechSynthesisUtterance(txt);
     synth.speak(u);
+
   }
 
 
@@ -282,38 +327,27 @@ const ChatWindow = () => {
 }
 
   const handleSend = async () => {
-    // alert("Test")
     if(text === "" && !img.file) return;
     const loadingLogo = document.getElementById("loading");
     loadingLogo.classList.remove("loadingHidden");
-    
 
     let imgUrl = null;
     // let txt = null;
    console.log(language)
    let translation = ""
     try {
-
       if(slider && text != ""){
         const from = "auto";
         let to = language;
-        // const text = translate;
         translation = await JsGoogleTranslateFree.translate({ from, to, text });
-        // setTranslate("test")
-        console.log(translation)
       }
       if(img.file){
         imgUrl = await upload(img.file);
       }
-      
-      console.log(translation)
-      // console.log(text);
-      
         
         await updateDoc(doc(db,"chats",chatId),{
           messages:arrayUnion({
             senderId: currentUser.id,
-            // ...(txt && {text:txt}),
             userName: currentUser.username,
             avatar: currentUser.avatar,
             ...(translation != "" ? {text:translation} : {text}),
@@ -321,10 +355,8 @@ const ChatWindow = () => {
             ...(imgUrl && {img:imgUrl}),
           })
         });
-     
 
       const userIDs = [currentUser.id, user.id]
-
 
       userIDs.forEach(async (id)=>{
         const userChatsRef = doc(db, "userChats", id)
@@ -335,7 +367,6 @@ const ChatWindow = () => {
   
           const chatIndex = userChatsData.chats.findIndex((c)=> c.chatId === chatId)
   
-          // userChatsData.chats[chatIndex].lastMessage = !text ? "Image File" : text;
           userChatsData.chats[chatIndex].lastMessage = translation != "" ? translation : text != "" ? text : "Image File";
           userChatsData.chats[chatIndex].isSeen = id === currentUser.id ? true : false;
           userChatsData.chats[chatIndex].updatedAt = Date.now();
@@ -377,6 +408,58 @@ const ChatWindow = () => {
     }
   }
 
+  const handleUnfriend = async (chatId) => {
+    const loadingLogo = document.getElementById("loading");
+    loadingLogo.classList.remove("loadingHidden");
+    onSnapshot(doc(db, "userChats", currentUser.id), async (res) =>{
+        const items = res.data();
+        let arrTestCurrentUser = items.chats;
+        try {
+          arrTestCurrentUser.map(async (item, indx) =>{
+             if(item.chatId == chatId){
+              arrTestCurrentUser.splice(indx, 1)
+              await updateDoc(doc(db,"userChats", currentUser.id),{
+                chats: arrTestCurrentUser
+              })
+              
+                onSnapshot(doc(db, "userChats", item.receiverId), async (res) =>{
+                  const items = res.data();
+                  let arrTest = items.chats;
+                  arrTest.map(async (item2, indexTest)=>{
+                   console.log(indexTest)
+                    if(item2.chatId == chatId){
+                      arrTest.splice(indexTest, 1)
+                      console.log(arrTest)
+                      await updateDoc(doc(db,"userChats", item.receiverId),{
+                        chats: arrTest
+                      })
+                      
+                     await deleteDoc(doc(db, "chats", item2.chatId));
+                      
+                      
+                    }
+                  })
+                })
+             
+               
+             
+           }
+           })
+          console.log("User deleted")
+        } catch (err) {
+          console.log(err)
+        }finally{
+          loadingLogo.classList.add("loadingHidden");
+          changeChatId(false);
+          toast.success("User unfriended")
+         
+        }
+
+
+      })
+
+  }
+
   return (
     <div className="chatWindow" id="chatWindow">
       <div className="loading loadingHidden" id="loading"></div>
@@ -396,15 +479,19 @@ const ChatWindow = () => {
             </div>
         </div>
           <div className="translator">
-            <img src={slider ? "./slideON.png" : "./slideOFF.png"} alt="" onClick={() => setSlider((prev) => !prev)}/>
+            <img src={slider ? "./slideON.png" : "./slideOFF.png"} alt="" 
+                 onClick={() => setSlider((prev) => !prev)}/>
              <div className="texts">
-                  <span>Translator: {slider ? <span style={{color: "green"}}>ON</span> : <span style={{color: "red"}}>OFF</span>}</span>
-                  {slider ? <select value={language} style={{position: "absolute", marginTop: "25px"}} onChange={e => setLanguage(e.target.value)}>
-                 
-                              <option value="en">English</option>
-                              <option value="de">German</option>
-                              <option value="ru">Russian</option>
-                              <option value="ro">Romanian</option>
+                  <span>Translator: {slider ? 
+                  <span style={{color: "green"}}>ON</span> : 
+                  <span style={{color: "red"}}>OFF</span>}</span>
+                  {slider ? <select value={language} 
+                                    style={{position: "absolute", marginTop: "25px"}} 
+                                    onChange={e => setLanguage(e.target.value)}>
+                                        <option value="en">English</option>
+                                        <option value="de">German</option>
+                                        <option value="ru">Russian</option>
+                                        <option value="ro">Romanian</option>
                            </select> : ""}
              </div> 
           </div>
@@ -416,32 +503,10 @@ const ChatWindow = () => {
             setVidChat(prev=>!prev)
             const userDocRef = doc(db, "users", user?.id)
             setTimeout(async() => {
-              // const webcamVideo = document.getElementById('webcamVideo');
-              // const remoteVideo = document.getElementById('remoteVideo');
               localStream.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-              // remoteStream = new MediaStream();
               // Push tracks from local stream to peer connection
               document.getElementById('webcamVideo').srcObject = localStream.current;
-              localStream.current.getTracks().forEach((track) => {
-                pc.current.addTrack(track, localStream.current);
-              });
-              
-              // Pull tracks from remote stream, add to video stream
-              // pc.ontrack = (event) => {
-              //   event.streams[0].getTracks().forEach((track) => {
-              //     remoteStream.addTrack(track);
-              //   });
-              // };
-            
              
-              // remoteVideo.srcObject = remoteStream;
-
-             
-             
-              //Creating offer
-
-              // callButton.disabled = false;
-              // answerButton.disabled = false;
 
             }, 1000);
 
@@ -495,7 +560,7 @@ const ChatWindow = () => {
                   </div> : ""}
                 </div>
                 {!chat?.group ? <div className="blockBtn">
-                  <button >Unfriend</button>
+                  <button onClick={()=>{handleUnfriend(chatId)}}>Unfriend</button>
                   <button onClick={handleBlock}>{
                     isCurrentUserBlocked ? "You are blocked!" : isReceiverBlocked ? "User blocked" : "Block User"
                   }</button>
@@ -513,10 +578,13 @@ const ChatWindow = () => {
           </video> */}
           <span>
             <h3>Your webcam</h3>
-            <video id="webcamVideo" autoPlay playsInline></video>
+            <video id="webcamVideo" autoPlay playsInline onClick={testhangUp}></video>
             <div className="chatInput">
             <button id="callButton" onClick={createCall}>Create Call</button>
-            {answerOn ? <button style={{backgroundColor: "red"}} onClick={()=>{setVidChat(prev=>!prev)}}>
+            {answerOn ? <button style={{backgroundColor: "red"}} onClick={()=>{
+              hangUp()
+              setVidChat(prev=>!prev)
+              }}>
             End Call
             <img src="./hangUpWhite.png" alt="" width="30" height="30"/>
             </button> : ""}
@@ -535,7 +603,6 @@ const ChatWindow = () => {
         
            
             { chat?.messages?.map((message) =>(
-
            
             <div className={message.senderId === currentUser?.id ? "message own" : "message"} key={message?.createdAt}>
               <div className="texts">
@@ -546,14 +613,10 @@ const ChatWindow = () => {
                 {message.senderId === currentUser?.id ? "" : <img src={message?.avatar} alt="" title={message?.userName}/>} 
               { !message.img && message.text != "" &&
                 <p id={message?.createdAt} onClick={()=>{handleTTS(message.text)}}>
-                  {/* {message.senderId === currentUser?.id ? "" :  <span>{message?.userName + ": "}</span>}  */}
-                
                 <img src="./tts.png" alt=""/> 
                 {message.text}
                 </p>
-                
               }
-
              </div>
                
                 <span>{format(message.createdAt.toDate())}</span>
@@ -605,11 +668,12 @@ const ChatWindow = () => {
         </div>
         <input 
           type="text" 
-          placeholder={isCurrentUserBlocked || isReceiverBlocked ? "You cannot send a message" : "Type a message..." }
+          placeholder={isCurrentUserBlocked || 
+            isReceiverBlocked ? 
+            "You cannot send a message" : "Type a message..." }
           value={text} 
           onChange={(e)=>{
             setText(e.target.value)
-            // setTranslate(e.target.value)
           }} 
           disabled={isCurrentUserBlocked || isReceiverBlocked}/>
         <div className="emoji">

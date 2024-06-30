@@ -5,7 +5,7 @@ import { useUserStore } from "../../../lib/userStore"
 import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
 import { useChatStore } from "../../../lib/chatStore";
-import { useChatGroupStore } from "../../../lib/chatGroupStore";
+// import { useChatGroupStore } from "../../../lib/chatGroupStore";
 
 const List = () => {
   
@@ -15,7 +15,7 @@ const List = () => {
  const [chatGr, setChatGr] = useState([]);
  const {currentUser} = useUserStore();
  const {chatId,changeChat} = useChatStore();
- const {changeChatGroup} = useChatGroupStore();
+//  const {changeChatGroup} = useChatGroupStore();
  const [selectChats, setSelectChats] = useState("all")
 //  console.log(chatId)
 
@@ -181,34 +181,18 @@ const List = () => {
 
    
 
-    {/* {chatGr.map((chatGroup) => ( */}
     {filteredChats.map((chat)=>(
-        // console.log(chatGr.img)
-       
-chat.group && selectChats == "group" || !chat.group && selectChats == "chat" || selectChats == "all" ?  <div className="item" key={chat.chatId} onClick={()=> handleSelect(chat)} style={{backgroundColor: chat?.isSeen? "transparent" : "#dddddd35"}}>
+chat.group && selectChats == "group" || 
+!chat.group && selectChats == "chat" || selectChats == "all" ?  
+<div className="item" key={chat.chatId} onClick={()=> handleSelect(chat)} style={{backgroundColor: chat?.isSeen? "transparent" : "#dddddd35"}}>
         <img src={chat?.group ? chat?.img || "./groups.png"   : chat?.user.avatar || "./avatar.png"} alt="" />
         <div className="texts">
           <span>{chat?.group ? chat?.title ||  "Group" : chat?.user.username}</span>
           <p>{chat?.lastMessage}</p>
         </div>
       </div>  : ""
-          
-      // ))
-
        ))}
 
-        {/* {chatGr.map((chat) => (
-
-            <div className="item" key={chat?.createdAt} onClick={()=> handleGroupSelect(chat)}>
-            <img src={chat?.group.img || "./groups.png"} alt="" />
-            <div className="texts">
-              <span>{chat?.group.title ||  "Group"}</span>
-              <p></p>
-            </div>
-            </div>
-
-        ))} */}
-    
     </div>
     {addMode ? <AddUser/> : ""}
     </div>

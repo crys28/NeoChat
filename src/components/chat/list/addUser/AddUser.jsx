@@ -3,12 +3,14 @@ import { db } from "../../../../lib/firebase";
 import "./addUser.css";
 import { useEffect, useState } from "react";
 import { useUserStore } from "../../../../lib/userStore";
+import { toast } from "react-toastify";
 
 const AddUser = () => {
   const {currentUser} = useUserStore();
   const [user, setUser] = useState(null);
   const [chats, setChats] = useState([]);
-
+  const [testArr, setTestArr] = useState([]);
+  const [userExist, setUserExist] = useState(false);
   useEffect(()=>{
     const unSub = onSnapshot(doc(db, "userChats", currentUser.id), async (res) => {
       const items = res.data().chats;
@@ -16,10 +18,10 @@ const AddUser = () => {
       const promises = items.map( async(item)=>{
         const userDocRef = doc(db, "users", item.receiverId);
         const userDocSnap = await getDoc(userDocRef);
-
+        testArr.push(item?.receiverId)
         const user = userDocSnap.data()
 
-        return {...item, user};
+        return {...item, user, testArr};
       })
      
       const chatData = await Promise.all(promises)
@@ -37,16 +39,24 @@ const AddUser = () => {
     e.preventDefault()
     const formData = new FormData(e.target)
     const username = formData.get("username")
-
     try{
       const userRef = collection(db, "users");
       
       const q = query(userRef, where("username", "==", username));
 
       const querySnapShot = await getDocs(q);
-
+      
       if(!querySnapShot.empty){
         setUser(querySnapShot.docs[0].data());
+        for(let i = 0; i<testArr.length; i++){
+          if(testArr[i] === querySnapShot.docs[0].data().id){
+            setUserExist(true)
+          }else{
+            setUserExist(false)
+          }
+        }
+        
+       
       }
     }catch(err){
       console.log(err)
@@ -57,7 +67,6 @@ const AddUser = () => {
 
     const chatRef = collection(db, "chats");
     const userChatsRef = collection(db, "userChats");
-
     try {
       const newChatRef = doc(chatRef)
 
@@ -93,11 +102,20 @@ const AddUser = () => {
       // console.log(newChatRef.id)
     } catch (err) {
       console.log(err);
-    }
+    }finally{
+      const modal = document.getElementById("modal");
+            const imgFix = document.getElementById("imgFix");
+            const chatWindow = document.getElementById("chatWindow");
+            {chatWindow ? chatWindow.style = "filter: blur(0px)" : ""};
+            modal.style = "display: none";
+            imgFix.src = "./plus.png"
+            toast.success("User added to your friends!")
+  }
   }
 
   return (
     <div className="addUser" id="modal">
+       <div className="loading loadingHidden" id="loading"></div>
        <div className="addUserModal">
         <div className="titleBar">
           <span>Add new friends</span>
@@ -133,7 +151,7 @@ const AddUser = () => {
                 <img src={user.avatar || "./avatar.png"} alt="" />
                 <span>{user.username}</span>
             </div>
-            <button onClick={handleAddUser}>Add User</button>
+            <button disabled={userExist} style={userExist ? {backgroundColor: "#dddddd2d", color: "grey"} : {}} onClick={handleAddUser}>{userExist ? "Added" : "Add User"}</button>
         </div>
         }
 

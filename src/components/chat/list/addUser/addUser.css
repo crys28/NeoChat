@@ -104,6 +104,9 @@
                 color: white;
                 border: none;
                 cursor: pointer;
+                &:hover{
+                    filter: brightness(75%);
+                }
             }
         }
 

@@ -18,71 +18,7 @@ const Groups = () => {
       file:null,
       url:""
   })
-    // const testArr = ["alex", "calin"]
-
-    // console.log(currentUser.id)
-
     
-    // const userChatRef = getDoc(db, 'userChats', currentUser.id);
-    // console.log(userChatRef)
-    // const snapshot = userChatRef.get();
-    // snapshot.forEach(doc => {
-    //   console.log(doc.currentUser.id, '=>', doc.data());
-    // });
-    // const members = []
-    // useEffect(() =>{
-      // const docRef = doc(db, "userChats", currentUser.id);
-      // const docSnap = getDoc(docRef);
-      // console.log(docSnap.data())
-      
-      
-      // const getUserChat = onSnapshot(doc(db, "userChats", currentUser.id), async (res) =>{
-      //   const items = res.data().chats;
-        
-      //   items.map(async (item) =>{
-      //     if(item.members){
-      //      members.push(item.members)
-      //       console.log(item.members)
-      //     }
-      //   })
-      //   console.log(members)
-      // })
-
-      // for(let i = 0; i<=members[0].length; i++){
-      //   const unSub = onSnapshot(doc(db, "users", currentUser.id), async (res) =>{
-      //     const items = res.data();
-      //     console.log(items.username)
-
-      //   })
-      // }
-      
-        // console.log(chatGr?.members)
-        // const promises = items.map( async(item)=>{
-          //  items.map(async(item)=>{
-          //   console.log(item)
-
-            // return{...item}
-          //  })
-      //       console.log(item.username)
-      //     //   const userDocRef = doc(db, "chats", item.chatId);
-      //     //   const userDocSnap = await getDoc(userDocRef);
-      
-      //     // const group = userDocSnap.data()
-      //     return {...item};
-      
-    
-      // })
-      // const chatData = await Promise.all(promises)
-    
-      //   setChatGr(chatData.sort((a,b)=>b.updatedAt - a.updatedAt))
-     
-    
-    //   return () =>{
-    //     unSub();
-    //     getUserChat();
-    //   }
-    // }, [currentUser.id])
-
   useEffect(()=>{
   const unSub = onSnapshot(doc(db, "userChats", currentUser.id), async (res) =>{
     const items = res.data().chats;
@@ -150,14 +86,6 @@ const Groups = () => {
             title: groupTitle.value.trim()
           });
 
-          // await setDoc(newUserChatRef,{
-          //   createdAt: serverTimestamp(),
-          //   group: true,
-          //   img: imgUrl,
-          //   messages: [],
-          //   title: groupTitle.value.trim()
-          // });
-    
          for(let i=0; i<=users.length; i++ ){
             await updateDoc(doc(userChatsRef, users[i]),{
                 chats: arrayUnion({
@@ -178,7 +106,6 @@ const Groups = () => {
          location.reload()
         } catch (err) {
           console.log(err);
-        //   throw(err);
         }
         
       }

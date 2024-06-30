@@ -101,19 +101,15 @@ const Settings = () => {
         settingsContainer.style = "filter: blur(5px);"
  
         try{
-
             const imgUrl = await upload(avatar.file);
-
             await updateDoc(doc(db,"users", currentUser.id),{
                 avatar: imgUrl
               });
-           
             fetchUserInfo(currentUser.id)
             const saveBtn = document.getElementById("btns");
             saveBtn.classList.add('hidden')
             toast.success("Profile picture changed!");
         }catch(err){
-            // console.log(username);
             toast.error(err.message);
         }finally{
             setLoading(false);
@@ -164,18 +160,14 @@ const Settings = () => {
  
         try{
            const slider = document.getElementById("slider");
-           
             await updateDoc(doc(db,"users", currentUser.id),{
                opacity: slider.value == "99" ? 100 : slider.value
               });
-           
             fetchUserInfo(currentUser.id)
             const saveBtn = document.getElementById("btnsOpacity");
             saveBtn.classList.add('hidden')
-            
             toast.success("Opacity was set succesfully!");
         }catch(err){
-            // console.log(username);
             toast.error(err.message);
         }finally{
             setLoading(false);

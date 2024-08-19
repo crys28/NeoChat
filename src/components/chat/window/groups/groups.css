@@ -90,9 +90,19 @@
                 .btns{
                     display: flex;
                     gap: 20px;
-
+                   
                     button{
                         padding: 10px;
+                        border: none;
+                        border-radius: 15px;
+                        cursor: pointer;
+                        &:nth-child(3){
+                            color: red;
+                            
+                        }
+                        &:hover{
+                            filter: brightness(75%);
+                        }
                     }
                 }
 
@@ -131,23 +141,73 @@
                             border-radius: 50%;
                         }
                     }
-
-                    .titleGroup{
+                    .belowGroupDetails{
                         display: flex;
-                        flex-direction: column;
+                        flex-direction: row;
+                        width: 100%;
+                        .titleGroup{
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: space-around;
+                            gap: 15px;
+                            flex: 1;
+                            span{
+                                font-size: 18px;
+                            }
+                            input{
+                                background-color: rgba(50, 50, 50, 1);
+                                padding: 5px;
+                                width: 50%;
+                                border: 0;
+                                color: white;
+                                font-size: 20px;
+                            }
+                        }
+
+                        .grantAdmin{
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: space-around;
+                            flex: 1;
+                            span{
+                                display: flex;
+                                align-items: center;
+                                gap: 15px;
+                            }
+                        }
+
+                        
+
+                    }
+
+                    .addMemberSection{
+                        display: flex;
+                        flex: 3;
                         align-items: center;
                         justify-content: space-around;
-                        gap: 15px;
-                        flex: 3;
+                        flex-direction: column;
                         span{
-                            font-size: 18px;
+                            font-size: 2rem;
+                            /* gap: 15px; */ 
                         }
-                        input{
-                            background-color: rgba(50, 50, 50, 1);
-                            padding: 5px;
-                            border: 0;
-                            color: white;
-                            font-size: 20px;
+                        .memberList{
+                            display: flex;
+                            flex-direction: column;
+                            height: 75%;
+                            overflow-y: auto;
+                            /* border: 1px solid white; */
+                            .item{
+                                display: flex;    
+                                justify-content: left;
+                                span{
+                                    font-size: 1.2rem;
+                                }
+                                img{
+                                    border-radius: 50px;
+                                }
+                            }
                         }
                     }
 
@@ -155,6 +215,9 @@
                         flex: 1;
                         display: flex;
                         padding: 20px;
+                        button{
+                            height: 50px;
+                        }
                     }
                 }
 

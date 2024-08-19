@@ -11,11 +11,13 @@ import { format } from 'timeago.js';
 import axios from 'axios';
 import JsGoogleTranslateFree from "@kreisler/js-google-translate-free";
 import { toast } from "react-toastify";
-
+import CryptoJS from "crypto-js";
+// import { francAll } from "franc-min";
+// import { franc } from 'franc-min';
 // import firebase from 'firebase/app';
 // import 'firebase/firestore';
 // const firestore = firebase.firestore();
-
+// const voices = window.speechSynthesis.getVoices();
 const ChatWindow = () => {
   const [chat, setChat] = useState();
   const [groupChat, setGroupChat] = useState();
@@ -25,7 +27,7 @@ const ChatWindow = () => {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const centerChat = document.getElementById("centerChat")
-  // const [translate, setTranslate] = useState("");
+  const [translate, setTranslate] = useState("");
   const [img, setImg] = useState({
     file: null,
     url:""
@@ -34,6 +36,8 @@ const ChatWindow = () => {
   //   file: null,
   //   url:""
   // });
+
+
 
   const {chatId, user, isCurrentUserBlocked, isReceiverBlocked, changeBlock, changeChatId} = useChatStore();
   // const {userGroup, chatGroupId} = useChatGroupStore();
@@ -45,31 +49,56 @@ const ChatWindow = () => {
   const [answerOn, setAnswerOn] = useState(false);
   const [userCall, setUserCall] = useState("");
   const [chatInput, setChatInput] = useState("Input id here...");
+  const [isLocalMuted, setIsLocalMuted] = useState(false);
+  const [isRemoteMuted, setIsRemoteMuted] = useState(false);
 
   const pc = useRef(new RTCPeerConnection({
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
   }));
   const localStream = useRef(null);
   const remoteStream = useRef(new MediaStream());
+  // const rem = document.getElementById('remoteVideo').srcObject
+
+useEffect(()=>{
+  // pc.current.ontrack = (event) => {
+  //   remoteStream.current.addTrack(event.track);
+  //   document.getElementById('remoteVideo').srcObject = remoteStream.current;
+  // };
+}, [])
+
   useEffect(() => {
-    pc.current.ontrack = (event) => {
-      remoteStream.current.addTrack(event.track);
-      document.getElementById('remoteVideo').srcObject = remoteStream.current;
-    };
+   
     pc.current.oniceconnectionstatechange = () => {
       if (pc.current.iceConnectionState === 'disconnected' || pc.current.iceConnectionState === 'failed' || pc.current.iceConnectionState === 'closed') {
-        hangUp();
-        pc.current = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-        });
+        // hangUp();
+        // pc.current = new RTCPeerConnection({
+        //   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        // });
         // pc.current.ontrack = (event) => {
         //   remoteStream.current.addTrack(event.track);
-        //   document.getElementById('remoteVideo').srcObject = remoteStream.current;
+        //  document.getElementById('remoteVideo').srcObject = remoteStream.current;
         // };
-        remoteStream.current = new MediaStream();
-
+        // remoteStream.current = new MediaStream();
+       
+          
+          setVidChat(false)
+          // if (pc) {
+          //   pc.current.close();
+          //   // pc.current = null;
+            
+          // }
+          // // Stop all local media tracks
+          // if (localStream) {
+          //   localStream.current.getTracks().forEach(track => track.stop());
+          //   localStream.current = null;
+          // }
+          hangUp()
+       
+        
       }
-    }
+    } 
+   
+   
     // pc.current.onicecandidate = (event) => {
     //   if (event.candidate && callId) {
     //     const candidatesCollectionRef = collection(
@@ -81,7 +110,7 @@ const ChatWindow = () => {
     //     addDoc(candidatesCollectionRef, event.candidate.toJSON());
     //   }
     // };
-  }, []);
+  }, [pc.current]);
 
   
   // const webcamButton = document.getElementById('webcamButton');
@@ -215,51 +244,254 @@ const ChatWindow = () => {
   }
   const hangUp = async () => {
     // Close the RTCPeerConnection
-  if (pc) {
+    // if (pc) {
+    //   pc.current.close();
+    //   pc.current = null;
+      
+    // }
+    // // Stop all local media tracks
+    // if (localStream) {
+    //   localStream.current.getTracks().forEach(track => track.stop());
+    //   localStream.current = null;
+    // }
     pc.current.close();
-    pc.current = null;
-    
-  }
-  // Stop all local media tracks
-  if (localStream) {
-    localStream.current.getTracks().forEach(track => track.stop());
-    localStream.current = null;
-  }
+    if (localStream) {
+      localStream.current.getTracks().forEach(track => track.stop());
+      localStream.current = null;
+    }          
 
   const callDocRef = doc(firestore, 'calls', callId);
   await deleteDoc(callDocRef);
   }
+
+  const toggleLocalMute = () => {
+    localStream.current.getAudioTracks().forEach(track => track.enabled = !track.enabled);
+    setIsLocalMuted(!isLocalMuted);
+  };
+
+  const toggleRemoteMute = () => {
+    remoteStream.current.getAudioTracks().forEach(track => track.enabled = !track.enabled);
+    setIsRemoteMuted(!isRemoteMuted);
+  };
 //****************************************************
 
   const userChat = getDoc(doc(db, "userChats", currentUser.id))
      const endRef = useRef(null);
 
-     console.log(userChat)
+    //  console.log(userChat)
 
   // console.log(chat?.messages.length)
-
+   
   for(let i=0;i<chat?.messages.length;i++){
       if(chat?.messages[i].img){
         console.log("image found")
       }
   }
 
-
   
-  const handleTTS =  (txt) => {
-    
+  
+  const handleTTS = (txt) => {
     const synth = window.speechSynthesis;
-    const u = new SpeechSynthesisUtterance(txt);
+    const u = new SpeechSynthesisUtterance(decryptMessage(txt));
+    u.lang = language
     synth.speak(u);
-
   }
+
+  useEffect(()=>{
+    if(!slider){
+      setTranslate("");
+    }
+  })
+
+
+  const [avatars, setAvatars] = useState({});
+
+  const getUserAvatar = async (userId) => {
+    const userRef = doc(db, 'users', userId);
+    const userData = (await getDoc(userRef)).data();
+    return userData.avatar;
+  }     
+
+  useEffect(() => {
+    const fetchAvatars = async () => {
+      const avatarPromises = chat?.messages.map(async (msg) => {
+        const avatarUrl = await getUserAvatar(msg.senderId);
+        return { userId: msg.senderId, avatarUrl };
+      });
+
+      const avatarResults = await Promise.all(avatarPromises);
+      const avatarMap = avatarResults.reduce((acc, { userId, avatarUrl }) => {
+        acc[userId] = avatarUrl;
+        return acc;
+      }, {});
+
+      setAvatars(avatarMap);
+    };
+
+    fetchAvatars();
+  }, [chat?.messages]);
+
+  const [username, setUsername] = useState({});
+  const getUsername = async (userId) => {
+    const userRef = doc(db, 'users', userId);
+    const userData = (await getDoc(userRef)).data();
+    return userData.username;
+  }     
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      const userPromises = chat?.messages.map(async (msg) => {
+        const userName = await getUsername(msg.senderId);
+        return { userId: msg.senderId, userName };
+      });
+
+      const userResults = await Promise.all(userPromises);
+      const userMap = userResults.reduce((acc, { userId, userName }) => {
+        acc[userId] = userName;
+        return acc;
+      }, {});
+
+      setUsername(userMap);
+    };
+
+    fetchUsername();
+  }, [chat?.messages]);
+
+  // console.log(userData.avatar)
+  const handleMsgTranslate = async (msgId, txt) =>{
+        if(!slider){
+          return;
+        }
+        let text = decryptMessage(txt)
+        let msg = document.getElementById(msgId);
+        let translation = ""
+        const from = "auto";
+        let to = language;
+        translation = await JsGoogleTranslateFree.translate({ from, to, text });
+        if(msg){
+          msg.innerHTML = `<img src="./tts.png" alt=""/>` + translation
+          msg.title = `Translated text`
+          setTranslate(translation)
+          const img = msg.querySelector('img');
+          img.addEventListener('click', ()=>{handleTTS(encryptMessage(translation))})
+         
+        }else{
+          console.error('Element not found.');
+        }
+  }
+
+
+const secretKey = import.meta.env.VITE_CRYPTO_KEY;
+
+// Function to encrypt a message
+const encryptMessage = (message) => {
+  return CryptoJS.AES.encrypt(message, secretKey).toString();
+};
+
+// Function to decrypt a message
+const decryptMessage = (cipherText) => {
+  const bytes = CryptoJS.AES.decrypt(cipherText, secretKey);
+  return bytes.toString(CryptoJS.enc.Utf8);
+};
 
 
   useEffect(()=>{
     endRef.current?.scrollIntoView({behavior: "smooth"})
   },[])    
 
-  
+  useEffect(()=>{
+    setChatMember([])
+    document.getElementById("detailSection").classList.add("hidden");
+    setDetailsOn(false)
+    setTimeout(() => {
+      
+      centerChat.scrollTop = centerChat.scrollHeight;
+    }, 500);
+  }, [chatId])
+
+  const [chatMembers, setChatMember] = useState([]);
+
+  const handleMembers = ()=>{
+    onSnapshot(doc(db, "userChats", currentUser?.id), (res) =>{
+      let arr = res.data().chats
+      
+      try {
+        
+        arr.map(async (item, indx) =>{
+          if(item.chatId == chatId && item.members){
+            for(let i=0; i<item.members.length; i++){
+              onSnapshot(doc(db, "users", item.members[i]), (res) =>{
+                let arr2 = res.data()
+                
+                    if(arr2.id == item.members[i]){
+                      // console.log(arr2.username)
+                     if(item.groupAdmin.includes(arr2.username)){
+
+                       chatMembers.push(arr2.username + " (Admin)")
+                     }
+                     else{
+                      chatMembers.push(arr2.username)
+                     }
+                      
+                    }
+               
+              })
+            }
+            
+          }
+
+      })
+      } catch (error) {
+        console.log(error)
+      }finally{
+        // setChatMember([])
+      }
+      
+    })
+  }
+
+  // useEffect(()=>{
+    
+  //   const unSub = onSnapshot(doc(db, "userChats", currentUser?.id), (res) =>{
+  //     let arr = res.data().chats
+      
+  //     try {
+        
+  //       arr.map(async (item, indx) =>{
+  //         if(item.chatId == chatId && item.members){
+  //           for(let i=0; i<item.members.length; i++){
+  //             onSnapshot(doc(db, "users", item.members[i]), (res) =>{
+  //               let arr2 = res.data()
+                
+  //                   if(arr2.id == item.members[i]){
+  //                     // console.log(arr2.username)
+                     
+  //                       chatMembers.push(arr2.username)
+                      
+  //                   }
+               
+  //             })
+  //           }
+            
+  //         }
+
+  //     })
+  //     } catch (error) {
+  //       console.log(error)
+  //     }finally{
+  //       // setChatMember([])
+  //     }
+      
+  //   })
+
+  //   return () =>{
+  //     unSub();
+      
+  //   }
+   
+  // }, [chatId]);
+
+ 
 
   useEffect(()=>{
     const unSub = onSnapshot(doc(db, "chats", chatId), (res) =>{
@@ -270,19 +502,6 @@ const ChatWindow = () => {
       unSub();
     }
   }, [chatId]);
-
-
-
-  // console.log(groupChat)
-  // useEffect(()=>{
-  //   const unSub = onSnapshot(doc(db, "groupChats", chatGroupId), (res) =>{
-  //     setGroupChat(res.data())
-  //   })
-
-  //   return () =>{
-  //     unSub();
-  //   }
-  // }, [chatGroupId]);
 
 
   const [detailsOn, setDetailsOn] = useState(false);
@@ -334,12 +553,15 @@ const ChatWindow = () => {
     let imgUrl = null;
     // let txt = null;
    console.log(language)
-   let translation = ""
+   let translation = "";
+   let encryptedTranslation = ""
+   let encryptedText = encryptMessage(text)
     try {
       if(slider && text != ""){
         const from = "auto";
         let to = language;
         translation = await JsGoogleTranslateFree.translate({ from, to, text });
+        encryptedTranslation = encryptMessage(translation);
       }
       if(img.file){
         imgUrl = await upload(img.file);
@@ -348,9 +570,9 @@ const ChatWindow = () => {
         await updateDoc(doc(db,"chats",chatId),{
           messages:arrayUnion({
             senderId: currentUser.id,
-            userName: currentUser.username,
-            avatar: currentUser.avatar,
-            ...(translation != "" ? {text:translation} : {text}),
+            // userName: currentUser.username,
+            // avatar: currentUser.avatar,
+            ...(translation != "" ? {text:encryptedTranslation} : {text: encryptedText}),
             createdAt: new Date(),
             ...(imgUrl && {img:imgUrl}),
           })
@@ -392,6 +614,14 @@ const ChatWindow = () => {
     }
 
   }
+
+  const handleKeyDown = (event) => {
+
+    // console.log(event.key)
+    if (event.key === 'Enter') {
+      handleSend();
+    }
+  };
 
   const handleBlock = async () => {
     if(!user) return;
@@ -475,9 +705,10 @@ const ChatWindow = () => {
             <img src={chat?.group ? chat?.img : user?.avatar || "./avatar.png"} alt="" />
             <div className="texts">
               <span>{chat?.group ? chat?.title : user?.username}</span>
-              <p>{chat?.group ? "Group" : user?.bio}</p>
+              <p>{chat?.group ? "Group" : user?.bio} | <span>AES Encrypted</span></p>
             </div>
         </div>
+        
           <div className="translator">
             <img src={slider ? "./slideON.png" : "./slideOFF.png"} alt="" 
                  onClick={() => setSlider((prev) => !prev)}/>
@@ -492,23 +723,37 @@ const ChatWindow = () => {
                                         <option value="de">German</option>
                                         <option value="ru">Russian</option>
                                         <option value="ro">Romanian</option>
+                                        <option value="fr">French</option>
+                                        <option value="es">Spanish</option>
+                                        <option value="zh">Chinese</option>
+                                        <option value="ja">Japanese</option>
                            </select> : ""}
              </div> 
           </div>
         <div className="icons">
-          <img src="./phone.png" alt=""/>
+          {/* <img src="./phone.png" alt="" onClick={()=>{
+            // alert("FUCK OFF ALEX")
+            console.log(chatMembers)
+            // encryptMessage("Hello World")
+            // decryptMessage("U2FsdGVkX19uSQzJe9WrE0LrMXA024PTq+GwId32hQk=")
+          }}/> */}
           <img src={vidChat ? "./videoOn.png" : "./video.png"} alt=""  id="webcamButton" onClick={ async ()=>{
             setAnswerOn(false)
             setUserCall(user?.username)
             setVidChat(prev=>!prev)
             const userDocRef = doc(db, "users", user?.id)
-            setTimeout(async() => {
-              localStream.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-              // Push tracks from local stream to peer connection
-              document.getElementById('webcamVideo').srcObject = localStream.current;
-             
-
-            }, 1000);
+            if(!vidChat){
+              setTimeout(async() => {
+                localStream.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                // Push tracks from local stream to peer connection
+                document.getElementById('webcamVideo').srcObject = localStream.current;
+               
+  
+              }, 1000);
+            }else{
+              hangUp()
+            }
+           
 
           
             // callButton.disabled = false;
@@ -520,21 +765,33 @@ const ChatWindow = () => {
                   const detailSection = document.getElementById("detailSection");
                   if(!detailsOn){
                     detailSection.classList.remove("hidden");
+                    handleMembers()
+                    setTimeout(() => {
+                      
+                      fetchUserInfo(currentUser?.id)
+                    }, 500);
                   }else{
                     detailSection.classList.add("hidden");
+                    setChatMember([])
                   }
+                  
                 }
                
           }/>
 
           <div id="detailSection" className="details hidden">
               <div className="info">
-                <div className="option">
+                {chat?.group ? <div className="option">
                   <div className="title">
-                    <span>Chat Settings</span>
-                    <img src="./arrowUp.png" alt="" />
+                      <span> {chat?.group ? "Chat Members" : ""}</span>
+                      {/* <img src={!arrowUp ? "./arrowDown.png" :  "./arrowUp.png"} alt="" onClick={()=>{setArrowUp(prev=>!prev)}}/> */}
                   </div>
-                </div>
+                  <div  className="chatMembers">
+                  {chatMembers?.map((member, indx) => (
+                          <span key={indx}> {member} </span>
+                   ))}
+                  </div>
+                </div> : ""}
                 <div className="option">
                   <div className="title">
                     <span>Shared Photos</span>
@@ -546,12 +803,12 @@ const ChatWindow = () => {
                 
                       <div className="photoItem" style={!message.img ? {display: "none"} : {}} key={message?.createdAt}>
                       <div className="photoDetail">
-                        <a href={message.img}>                    
+                        <a href={message.img} target="_blank">                    
                           <img src={message.img} alt="" />
                         </a>
                         <span>{"Img"}</span>
                       </div>
-                        <a href={message.img} download="My_File.pdf"> 
+                        <a href={message.img} download="My_File.pdf" target="_blank"> 
                           <img src="./download.png" alt="" />
                         </a>
                     </div> 
@@ -581,8 +838,15 @@ const ChatWindow = () => {
             <video id="webcamVideo" autoPlay playsInline onClick={testhangUp}></video>
             <div className="chatInput">
             <button id="callButton" onClick={createCall}>Create Call</button>
+            <img onClick={toggleLocalMute} src={isLocalMuted ? './micOFF.png' : './micON.png'} title={isLocalMuted ? 'Unmute' : 'Mute'} width="34" height="34"/>
             {answerOn ? <button style={{backgroundColor: "red"}} onClick={()=>{
               hangUp()
+              // pc.current.close();
+              // if (localStream) {
+              //   localStream.current.getTracks().forEach(track => track.stop());
+              //   localStream.current = null;
+              // }
+              // pc.current = null; 
               setVidChat(prev=>!prev)
               }}>
             End Call
@@ -595,8 +859,9 @@ const ChatWindow = () => {
           <h3>{user?.username + "'s "} webcam</h3>
             <video id="remoteVideo" autoPlay playsInline></video>
             <div className="chatInput" >
-              <input id="callInput" type="text" defaultValue={chatInput}/>
+              <input id="callInput" type="text" placeholder={chatInput}/>
               <button id="answerButton" onClick={answerCall}>Answer</button>
+              <img onClick={toggleRemoteMute} src={isRemoteMuted ? './micOFF.png' : './micON.png'} title={isRemoteMuted ? 'Unmute' : 'Mute'}   width="34" height="34"/>
             </div>
           </span>
         </div>}          
@@ -606,15 +871,18 @@ const ChatWindow = () => {
            
             <div className={message.senderId === currentUser?.id ? "message own" : "message"} key={message?.createdAt}>
               <div className="texts">
-                <a href={message.img}>
+                <a href={message.img} target="_blank">
                   {message.img && <img src={message.img} alt="" />}
                 </a>
              <div className="msg">
-                {message.senderId === currentUser?.id ? "" : <img src={message?.avatar} alt="" title={message?.userName}/>} 
+                {message?.senderId === currentUser?.id ? "" : <img src={avatars[message?.senderId]} alt="" title={username[message?.senderId]}/>} 
               { !message.img && message.text != "" &&
-                <p id={message?.createdAt} onClick={()=>{handleTTS(message.text)}}>
-                <img src="./tts.png" alt=""/> 
-                {message.text}
+                <p id={message?.createdAt.nanoseconds} onClick={()=>{
+                  // {!slider ? handleTTS(message.text) : ""}
+                  handleMsgTranslate(message?.createdAt.nanoseconds, message.text)
+                  }}>
+                <img src="./tts.png" alt="" onClick={()=>{ {!slider ? handleTTS(message.text) : ""} }}/> 
+                {decryptMessage(message.text)}
                 </p>
               }
              </div>
@@ -652,7 +920,7 @@ const ChatWindow = () => {
             <div ref={endRef}></div>
             <span style={{display: "none"}}>
             {setTimeout(() => {
-              centerChat.scrollTop = centerChat.scrollHeight
+              // centerChat.scrollTop = centerChat.scrollHeight
             }, 500)}
             </span>
 
@@ -675,7 +943,8 @@ const ChatWindow = () => {
           onChange={(e)=>{
             setText(e.target.value)
           }} 
-          disabled={isCurrentUserBlocked || isReceiverBlocked}/>
+          disabled={isCurrentUserBlocked || isReceiverBlocked}
+          onKeyDown={handleKeyDown}/>
         <div className="emoji">
           <img src="./emoji.png" alt="" onClick={() => setOpen((prev) => !prev)} />
           <div className="picker">

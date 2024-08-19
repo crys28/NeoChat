@@ -4,7 +4,7 @@
     align-items: center;
     justify-content: center;
     z-index: 0;
-  
+    height: 90%;
     /* background-color: rgba(17, 25, 40, 0.75);
     backdrop-filter: blur(19px) saturate(180%); */
     .hidden{
@@ -13,7 +13,7 @@
 
     .WindowSection{
         width: 80%;
-        height: 80vh;
+        height: 100%;
         border-radius: 15px;
         box-shadow: 0px 2px 20px #888;
         display: flex;
@@ -97,6 +97,11 @@
                     font-size: 14px;
                     font-weight: 300;
                     color: #a5a5a5;
+                    span{
+                        font-size: 10px;
+                        font-weight: 100;
+                        color: #356820;
+                    }
                 }
             
             }
@@ -186,6 +191,16 @@
                                border-radius: 50%;
                                cursor: pointer; 
 
+                            }
+                        }
+
+                        .chatMembers{
+                            display: flex;
+                            flex-direction: column;
+                            margin-top: 10px;
+                            span{
+                                color: #888;
+                                font-size: 15px;
                             }
                         }
 
@@ -379,10 +394,13 @@
             align-self: flex-end;
 
             .texts{
-                p{
-                    background-color: #5183fe;
-                    border-radius: 50px;
-                    padding: 15px;
+                .msg{
+
+                    p{
+                        background-color: #5183fe;
+                        border-radius: 50px;
+                        padding: 15px;
+                    }
                 }
                 span{
                     align-self: flex-end;
@@ -436,10 +454,10 @@
             }
 
             img{
-                width: 100%;
+                width: 300px;
                 height: 300px;
                 border-radius: 10px;
-                object-fit: cover;
+                object-fit: contain;
             }
          }
 

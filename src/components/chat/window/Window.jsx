@@ -7,6 +7,7 @@ import "./window.css"
 import Groups from "./groups/Groups";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
+import { toast } from "react-toastify";
 
 const Window = () => {
   const [state, setState] = useState(false)
@@ -18,17 +19,29 @@ const Window = () => {
     const unSub = onSnapshot(doc(db, "users", currentUser.id), async (res) => {
       const callNow = res.data();
 
-      if(callNow.callNow){
+      try {
+        if(callNow.callNow){
       
           alert(callNow.caller + " is calling you!\nUse this id to connect to the call:\n" + callNow?.callId); 
-          await updateDoc(userDocRef, {
-            callNow: false,
-            callId: "",
-            caller: ""
-          })
           
-        
+          setTimeout( async() => {
+          await navigator.clipboard.writeText(callNow?.callId);
+          toast.success('Call ID copied to clipboard');
+            
+          await updateDoc(userDocRef, {
+              callNow: false,
+              callId: "",
+              caller: ""
+            })
+          }, 500);
+          
+      
       }
+      } catch (error) {
+        console.log(error)
+      }
+
+      
 
 
     });

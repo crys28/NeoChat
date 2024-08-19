@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./login.css";
 import { toast } from "react-toastify";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut, getAdditionalUserInfo, sendEmailVerification } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut, getAdditionalUserInfo, sendEmailVerification, sendPasswordResetEmail } from "firebase/auth";
 import { auth, db } from "../../lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import upload from "../../lib/upload";
@@ -99,40 +99,6 @@ const Login = () => {
         }
     }
 
-    // const handleGoogleSignUp = async () => {
-    //     const provider = new GoogleAuthProvider();
-    //     try {
-    //       const result = await signInWithPopup(auth, provider);
-    //       // This gives you a Google Access Token. You can use it to access the Google API.
-    //       const credential = GoogleAuthProvider.credentialFromResult(result);
-    //       const token = credential.accessToken;
-    //       // The signed-in user info.
-    //       const user = result.user;
-    //       console.log('User info:', user);
-          
-    //     //   const imgUrl = await upload(avatar.file);
-
-    //         await setDoc(doc(db, "users", user.uid), {
-    //             username: user.displayName,
-    //             email: user.email,
-    //             avatar: user.photoURL,
-    //             bg: "./bg.png",
-    //             opacity: "85",
-    //             bio: "Bio",
-    //             id: user.uid,
-    //             blocked:[]
-    //           });
-
-    //         await setDoc(doc(db, "userChats", user.uid), {
-    //             chats:[],
-    //           });            
-            
-    //         toast.success("Account created! You can login now!");
-    //     } catch (error) {
-    //       console.error('Error during sign in:', error);
-    //     }
-    //   };
-
       const handleGoogleSignIn = async () => {
         const loadingLogo = document.getElementById("loading");
         const loginContainer = document.getElementById("loginContainer");
@@ -174,6 +140,23 @@ const Login = () => {
         }
       }
 
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+
+      const handlePasswordReset = async () => {
+        if (!email) {
+          toast.warning('Please enter your email address first');
+          return;
+        }
+    
+        try {
+          await sendPasswordResetEmail(auth, email);
+          toast.success('Password reset email sent successfully. Please check your inbox.');
+        } catch (error) {
+          toast.error(`Error: ${error.message}`);
+        }
+      };
+
   return (
     <div className='login'>
         <div className="loading loadingHidden" id="loading"></div>
@@ -181,14 +164,17 @@ const Login = () => {
             <div className="item">
                 <h2>Welcome back</h2>
                 <form onSubmit={handleLogin}>
-                    <input type="text" placeholder="Email" name="email" />
-                    <input type="password" placeholder="Password" name="password" />
+                    <input required type="email" placeholder="Email" name="email" value={email}
+                    onChange={(e) => setEmail(e.target.value)}/>
+                    <input required type="password" placeholder="Password" name="password" value={password}
+                    onChange={(e) => setPassword(e.target.value)}/>
                     <button disabled={loading}>{loading ? "Loading" : "Sign In"}</button>
                 </form>
                 <div className="googleDiv">
                 <button onClick={handleGoogleSignIn}>
                 <img src="./google.png" alt="" />Login</button>
                 </div>
+                <a href="#" onClick={handlePasswordReset}>Forgot password? Click here to reset</a>
             </div>
             <div className="separator"></div>
             <div className="item">
@@ -198,9 +184,9 @@ const Login = () => {
                     <img src={avatar.url || "./avatar.png"} alt="" />    
                     Upload avatar</label>
                     <input type="file" id="file" style={{display: "none"}} onChange={handleAvatar}/>
-                    <input type="text" placeholder="Username" name="username" />
-                    <input type="text" placeholder="Email" name="email" />
-                    <input type="password" placeholder="Password" name="password" />
+                    <input required type="text" placeholder="Username" name="username" />
+                    <input required type="email" placeholder="Email" name="email" />
+                    <input required minLength="6" type="password" placeholder="Password" name="password" />
                     <button disabled={loading}>{loading ? "Loading" : "Sign Up"}</button>
                 </form>
             </div>

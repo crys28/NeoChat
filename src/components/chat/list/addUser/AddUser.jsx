@@ -39,6 +39,10 @@ const AddUser = () => {
     e.preventDefault()
     const formData = new FormData(e.target)
     const username = formData.get("username")
+    if(username == ""){
+      toast.warning("Type the username first 🙄")
+      return;
+    }
     try{
       const userRef = collection(db, "users");
       
@@ -51,12 +55,15 @@ const AddUser = () => {
         for(let i = 0; i<testArr.length; i++){
           if(testArr[i] === querySnapShot.docs[0].data().id){
             setUserExist(true)
+            return;
           }else{
             setUserExist(false)
           }
         }
         
        
+      }else{
+        toast.warning("User not found 😔")
       }
     }catch(err){
       console.log(err)

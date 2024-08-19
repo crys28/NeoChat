@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUserStore } from "../../../../lib/userStore";
 import "./settings.css";
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "../../../../lib/firebase";
+import { auth, db } from "../../../../lib/firebase";
 import { toast } from "react-toastify";
 import upload from "../../../../lib/upload";
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 
 const Settings = () => {
     
@@ -19,6 +20,29 @@ const Settings = () => {
         url:""
     })
  
+
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+
+    useEffect(()=>{
+        const user = auth.currentUser;
+        const passwordSet = document.getElementById("passwordSet");
+          if (user) {
+      
+            try {
+                if (user.providerData[0].providerId === 'google.com') {
+                    passwordSet.innerHTML = "You are logged in with a Google account! \nYou can change your password through your google account settings"
+                  } 
+      
+           
+              
+             
+            } catch (error) {
+             console.log(error)
+            }
+        }
+    })
 
     const handleSlider = () => {
         const slider = document.getElementById("slider");
@@ -67,29 +91,39 @@ const Settings = () => {
         const profileSet = document.getElementById("profileSet");
         const OpacitySet = document.getElementById("OpacitySet");
         const bioSet = document.getElementById("bioSet");
+        const passwordSet = document.getElementById("passwordSet");
 
         if(itemSet == "profileSet"){
             profileSet.classList.remove("hidden")
             wallpaperSet.classList.add("hidden")
             OpacitySet.classList.add("hidden")
             bioSet.classList.add("hidden")
+            passwordSet.classList.add("hidden")
         }else if(itemSet == "wallpaperSet"){
             profileSet.classList.add("hidden")
             wallpaperSet.classList.remove("hidden")
             OpacitySet.classList.add("hidden")
             bioSet.classList.add("hidden")
+            passwordSet.classList.add("hidden")
         }else if(itemSet == "OpacitySet"){
             profileSet.classList.add("hidden")
             wallpaperSet.classList.add("hidden")
             OpacitySet.classList.remove("hidden")
             bioSet.classList.add("hidden")
+            passwordSet.classList.add("hidden")
         }else if(itemSet == "bioSet"){
             profileSet.classList.add("hidden")
             wallpaperSet.classList.add("hidden")
             OpacitySet.classList.add("hidden")
             bioSet.classList.remove("hidden")
+            passwordSet.classList.add("hidden")
+        }else if(itemSet == "passwordSet"){
+            profileSet.classList.add("hidden")
+            wallpaperSet.classList.add("hidden")
+            OpacitySet.classList.add("hidden")
+            bioSet.classList.add("hidden")
+            passwordSet.classList.remove("hidden")
         }
-
     }
 
     const handleProfileChange = async (e) =>{
@@ -208,10 +242,62 @@ const Settings = () => {
             setLoading(false);
             loadingLogo.classList.add("loadingHidden");
             settingsContainer.style = "filter: blur(0px);"
-            
+            fetchUserInfo()
         }
     }
 
+    const handlePassword = async(e) =>{
+        e.preventDefault()
+        const loadingLogo = document.getElementById("loading");
+        const settingsContainer = document.getElementById("settingsContainer");
+        loadingLogo.classList.remove("loadingHidden");
+        settingsContainer.style = "filter: blur(5px);"
+        if (newPassword !== confirmNewPassword) {
+            toast.warning('New passwords do not match.');
+            return;
+          }
+      
+          const user = auth.currentUser;
+      
+          if (user) {
+      
+            try {
+                if (user.providerData[0].providerId === 'password') {
+                    // Re-authenticate using email/password
+                    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+                    await reauthenticateWithCredential(user, credential);
+                    await updatePassword(user, newPassword);
+                    toast.success('Password updated successfully.');
+                  } else if (user.providerData[0].providerId === 'google.com') {
+                    toast.warning('You can change your password from google settings.');
+                  } else {
+                    setMessage('Re-authentication method not supported for this provider.');
+                    return;
+                  }
+      
+              // Update the password
+              
+             
+            } catch (error) {
+              // Handle errors here
+              if (error.code === 'auth/wrong-password') {
+                toast.error('The current password is incorrect.');
+              } else {
+                toast.error(`Error: ${error.message}`);
+              }
+            }finally{
+                const inputs = document.getElementsByTagName("input");
+                for(let i=0;i<inputs.length;i++){
+                    inputs[i].value = ""
+                }
+                setConfirmNewPassword("")
+                setNewPassword("")
+                setCurrentPassword("")
+                 loadingLogo.classList.add("loadingHidden");
+                 settingsContainer.style = "filter: blur(0px);"
+            }
+        }
+    }
   return (
     <div className='settings'>
         <div className="loading loadingHidden" id="loading"></div>
@@ -237,20 +323,23 @@ const Settings = () => {
                     </div>
                 </div>
                 <div className="item" onClick={() =>{handleItemDisplay("OpacitySet")}}>
-                    {/* <img src={currentUser.bg || "/bg.png"} alt="" width="80" height="80"/> */}
                     <div className="texts">
                         <span>Background Opacity</span>
                         <span>Click to change your Background Opacity</span>
                     </div>
                 </div>
                 <div className="item" onClick={() =>{handleItemDisplay("bioSet")}}>
-                    {/* <img src={currentUser.bg || "/bg.png"} alt="" width="80" height="80"/> */}
                     <div className="texts">
                         <span>Bio</span>
                         <span>Click to change your bio</span>
                     </div>
                 </div>
-                
+                <div className="item" onClick={() =>{handleItemDisplay("passwordSet")}}>
+                    <div className="texts">
+                        <span>Password</span>
+                        <span>Click to change your password</span>
+                    </div>
+                </div>
             </div>
             <div className="vr"></div>
             <div className="rightSide" id="rightSide">
@@ -258,7 +347,7 @@ const Settings = () => {
                     <form onSubmit={handleProfileChange}>
                         <label htmlFor="file">
                             <img src={avatar.url || currentUser.avatar } alt="" width="200" height="200"/>
-                            <span>Change</span>
+                            <h2>Change</h2>
                         </label>
                         
                         <input type="file" id="file" style={{display: "none"}} onChange={handleAvatar}/>
@@ -278,7 +367,7 @@ const Settings = () => {
                     <form onSubmit={handleWallpaperChange}>
                         <label htmlFor="fileWallpaper">
                             <img src={wallpaper.url || currentUser.bg } alt="" style={{borderRadius: "0%"}} width="300" height="200"/>
-                            <span>Change</span>
+                            <h2>Change</h2>
                         </label>
                         
                         <input type="file" id="fileWallpaper" style={{display: "none"}} onChange={handleWallpaper}/>
@@ -307,7 +396,7 @@ const Settings = () => {
                 <div className="itemDisplayOpac hidden" id="OpacitySet">
                    
                     <form onSubmit={handleOpacity}>
-                        <span>Change opacity</span>
+                        <h2>Change opacity</h2>
                       
                         <input type="range" className="slider" id="slider" min="10" max="99" defaultValue={currentUser.opacity} onChange={handleSlider}/>
                         <span id="opacRez">{currentUser.opacity + "%"}</span>
@@ -328,7 +417,7 @@ const Settings = () => {
                 <div className="itemDisplayBio hidden" id="bioSet">
                    
                     <form onSubmit={handleBio}>
-                        <span>Change your bio</span>
+                        <h2>Change your bio</h2>
                       
                         {/* <input type="text" className="slider" id="slider" min="10" max="99" defaultValue={currentUser.opacity} onChange={handleSlider}/> */}
                         <textarea id="bioArea" defaultValue={currentUser.bio} maxLength="30" onChange={handleBioArea}></textarea>
@@ -340,6 +429,44 @@ const Settings = () => {
                                 saveBtn.classList.add('hidden')
                                 const bio = document.getElementById("bioArea");
                                 bio.value = currentUser.bio
+                            }}>Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div className="itemDisplayPassword hidden" id="passwordSet">
+                   
+                    <form onSubmit={handlePassword}>
+                        <h2>Change your password</h2>
+                      
+                        <input
+                            type="password"
+                            placeholder="Current Password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                        />
+                        <input
+                            type="password"
+                            placeholder="New Password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                        />
+                        <input
+                            type="password"
+                            placeholder="Confirm New Password"
+                            value={confirmNewPassword}
+                            onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        />
+                        <div className="btns" id="btnsPassword">
+                            <button type="submit">Save</button>
+                            <button type="button" onClick={()=>{
+                                const inputs = document.getElementsByTagName("input");
+                                for(let i=0;i<inputs.length;i++){
+                                    inputs[i].value = ""
+                                }
+                                setConfirmNewPassword("")
+                                setNewPassword("")
+                                setCurrentPassword("")
                             }}>Cancel</button>
                         </div>
                     </form>

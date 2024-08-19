@@ -188,7 +188,7 @@ chat.group && selectChats == "group" ||
         <img src={chat?.group ? chat?.img || "./groups.png"   : chat?.user.avatar || "./avatar.png"} alt="" />
         <div className="texts">
           <span>{chat?.group ? chat?.title ||  "Group" : chat?.user.username}</span>
-          <p>{chat?.lastMessage}</p>
+          <p>{chat?.lastMessage.length > 20 ? "message..." : chat?.lastMessage}</p>
         </div>
       </div>  : ""
        ))}
